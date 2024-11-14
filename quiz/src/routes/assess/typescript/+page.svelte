@@ -1,9 +1,11 @@
 <script lang="ts">
   import { ArrowLeft, Clock, AlertCircle, Brain, CheckCircle2, XCircle } from 'lucide-svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import quizStore, { startQuiz, updateProgress, saveAnswers, saveResults } from '$lib/stores/quiz';
   import { questions, levelCriteria } from '$lib/data/typescript';
 
+  const mode = $page.url.searchParams.get('mode') || 'test';
   let currentQuestion = questions[$quizStore.currentStep];
   let selectedAnswer: number | null = null;
 
@@ -25,22 +27,30 @@
         return acc;
       }, {} as Record<string, number>);
 
-      let level = 'junior';
-      const middleRequirements = Object.entries(levelCriteria.middle.minScore)
-        .every(([key, required]) => (skillScores[key] || 0) >= required);
-      const seniorRequirements = Object.entries(levelCriteria.senior.minScore)
-        .every(([key, required]) => (skillScores[key] || 0) >= required);
+      let level = mode === 'self-assessment' ? 'self-assessed' : calculateLevel(skillScores);
+      
+      saveResults({
+        level,
+        scores: skillScores,
+        mode,
+        technology: 'typescript'
+      });
 
-      if (seniorRequirements) {
-        level = 'senior';
-      } else if (middleRequirements) {
-        level = 'middle';
-      }
-
-      saveResults(level, skillScores);
       goto('/');
     }
   };
+
+  function calculateLevel(scores: Record<string, number>) {
+    let level = 'junior';
+    const middleRequirements = Object.entries(levelCriteria.middle.minScore)
+      .every(([key, required]) => (scores[key] || 0) >= required);
+    const seniorRequirements = Object.entries(levelCriteria.senior.minScore)
+      .every(([key, required]) => (scores[key] || 0) >= required);
+
+    if (seniorRequirements) level = 'senior';
+    else if (middleRequirements) level = 'middle';
+    return level;
+  }
 
   const skipQuestion = () => {
     if ($quizStore.currentStep < questions.length - 1) {
@@ -68,9 +78,9 @@
 
   <div class="card p-8">
     {#if !$quizStore.inProgress}
-      <h1>TypeScript</h1>
+      <h1>{mode === 'self-assessment' ? 'TypeScript Self Assessment' : 'TypeScript Knowledge Test'}</h1>
       <p class="text-xl text-gray-600 mb-8">
-        Оценка навыков типизации и работы с TypeScript
+        {mode === 'self-assessment' ? 'Оценка навыков типизации и работы с TypeScript' : 'Оценка знаний TypeScript'}
       </p>
 
       <div class="space-y-8">
@@ -110,13 +120,13 @@
         <div class="card bg-primary/5 p-6">
           <h3 class="font-semibold mb-2">Начать оценку</h3>
           <p class="text-gray-600 mb-4">
-            Ответьте на вопросы, чтобы получить детальную оценку ваших навыков TypeScript
+            {mode === 'self-assessment' ? 'Ответьте на вопросы, чтобы получить детальную оценку ваших навыков TypeScript' : 'Ответьте на вопросы, чтобы пройти тестирование'}
           </p>
           <button 
             class="btn btn-primary w-full"
             on:click={startQuiz}
           >
-            Начать тестирование
+            {mode === 'self-assessment' ? 'Начать самооценку' : 'Начать тестирование'}
           </button>
         </div>
       </div>

@@ -11,6 +11,7 @@ interface QuizState {
         skillScores: {
             [key: string]: number;
         };
+        technology: string;
     } | null;
     inProgress: boolean;
     currentStep: number;
@@ -55,12 +56,13 @@ export const saveAnswers = (answers: Answers) => {
     }));
 };
 
-export const saveResults = (level: string, skillScores: { [key: string]: number }) => {
+export const saveResults = (level: string, skillScores: { [key: string]: number }, technology: string = 'react') => {
     quizStore.update(state => ({
         ...state,
         lastResults: {
             level,
-            skillScores
+            skillScores,
+            technology
         },
         inProgress: false,
         currentStep: 0
