@@ -1,7 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { writable, type Writable } from 'svelte/store';
-  import { AlertCircle, CheckCircle2, XCircle, AlertTriangle, ArrowRight } from 'lucide-svelte';
+  import { AlertCircle, CheckCircle2, XCircle, AlertTriangle, ArrowRight, ArrowLeft, Clock, Award, Brain } from 'lucide-svelte';
+  import quizStore, { saveAnswers, saveResults, updateProgress } from '$lib/stores/quiz';
+  import { onMount } from 'svelte';
 
   interface Option {
     label: string;
@@ -28,9 +30,11 @@
   }
 
   // Stores
-  const currentStep = writable(0);
-  const answers: Writable<Answers> = writable({});
-  const showResults = writable(false);
+  const showWelcome = writable(!$quizStore.inProgress);
+  const currentStep = writable($quizStore.currentStep);
+  const answers: Writable<Answers> = writable($quizStore.answers);
+  const showResults = writable($quizStore.lastResults !== null);
+  const showConfirmation = writable(false);
 
   // Skill groups definition
   const skillGroups: Record<string, SkillGroup> = {
@@ -198,17 +202,47 @@
   function handleAnswer(value: number) {
     const currentQuestion = questionsValue[$currentStep];
     if (currentQuestion) {
-      $answers = {
+      const newAnswers = {
         ...$answers,
         [currentQuestion.id]: value
       };
+      $answers = newAnswers;
+      saveAnswers(newAnswers);
       
       if ($currentStep < questionsValue.length - 1) {
         $currentStep++;
+        updateProgress($currentStep);
       } else {
-        $showResults = true;
+        $showConfirmation = true;
       }
     }
+  }
+
+  function skipQuestion() {
+    if ($currentStep < questionsValue.length - 1) {
+      $currentStep++;
+      updateProgress($currentStep);
+    } else {
+      $showConfirmation = true;
+    }
+  }
+
+  function goBack() {
+    if ($currentStep > 0) {
+      $currentStep--;
+      updateProgress($currentStep);
+    }
+  }
+
+  function startAssessment() {
+    $showWelcome = false;
+  }
+
+  function confirmSubmission() {
+    $showResults = true;
+    $showConfirmation = false;
+    const level = assessLevel();
+    saveResults(level, $answers);
   }
 
   type Level = 'junior' | 'middle' | 'below-junior';
@@ -257,117 +291,275 @@
 
     return gaps;
   }
+
+  // Subscribe to store changes to keep local state in sync
+  quizStore.subscribe(state => {
+    $currentStep = state.currentStep;
+    $answers = state.answers;
+    if (state.lastResults) {
+      $showResults = true;
+      $showWelcome = false;
+    }
+  });
 </script>
 
-<div class="max-w-2xl mx-auto p-4">
-  <div class="card p-6">
-    <div class="p-6">
-      <h2 class="text-2xl font-bold mb-4">React Developer Level Assessment</h2>
-      
-      {#if !$showResults}
-        <div class="space-y-6">
-          <div class="mb-4">
-            <span class="text-sm text-gray-500">
-              Question {$currentStep + 1} of {questionsValue.length}
-            </span>
+<div class="fade-in">
+  {#if $showWelcome}
+    <div class="text-center space-y-8">
+      <!-- Main heading -->
+      <div class="space-y-4">
+        <h1>Оцените свой уровень React разработчика</h1>
+        <p class="text-xl text-gray-600">5 минут для анализа навыков и получения плана развития</p>
+      </div>
+
+      <!-- Process steps -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div class="card p-6 text-center">
+          <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Clock class="w-6 h-6 text-primary" />
           </div>
-          
-          <h3 class="text-lg font-semibold mb-4">
-            {questionsValue[$currentStep].question}
-          </h3>
-          
-          <div class="space-y-3">
-            {#each questionsValue[$currentStep].options as option}
-              <button
-                on:click={() => handleAnswer(option.value)}
-                class="w-full text-left p-4 border rounded hover:bg-gray-50 transition-colors"
-              >
-                {option.label}
-              </button>
-            {/each}
+          <h3>Быстрая оценка</h3>
+          <p class="text-gray-600">5 минут на прохождение ключевых вопросов</p>
+        </div>
+
+        <div class="card p-6 text-center">
+          <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Brain class="w-6 h-6 text-primary" />
+          </div>
+          <h3>Точный анализ</h3>
+          <p class="text-gray-600">Оценка по 5 ключевым областям React</p>
+        </div>
+
+        <div class="card p-6 text-center">
+          <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Award class="w-6 h-6 text-primary" />
+          </div>
+          <h3>План развития</h3>
+          <p class="text-gray-600">Персональные рекомендации для роста</p>
+        </div>
+      </div>
+
+      <!-- Info block -->
+      <div class="card max-w-2xl mx-auto p-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3>Что вы получите</h3>
+            <ul class="space-y-3 text-left">
+              <li class="flex items-center gap-2">
+                <CheckCircle2 class="w-5 h-5 text-green-500 shrink-0" />
+                <span>Оценку текущего уровня</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <CheckCircle2 class="w-5 h-5 text-green-500 shrink-0" />
+                <span>Анализ сильных сторон</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <CheckCircle2 class="w-5 h-5 text-green-500 shrink-0" />
+                <span>План развития навыков</span>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3>Детали оценки</h3>
+            <ul class="space-y-3 text-left">
+              <li class="flex items-center gap-2">
+                <Clock class="w-5 h-5 text-primary shrink-0" />
+                <span>5 минут на прохождение</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <AlertCircle class="w-5 h-5 text-primary shrink-0" />
+                <span>5 ключевых вопросов</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <Brain class="w-5 h-5 text-primary shrink-0" />
+                <span>Мгновенный результат</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA Button -->
+      <button
+        on:click={startAssessment}
+        class="btn btn-primary text-lg shadow-lg"
+      >
+        Начать оценку
+        <ArrowRight class="w-5 h-5 ml-2" />
+      </button>
+
+      <!-- Social proof -->
+      <div class="text-center text-gray-600">
+        <p class="font-medium">Уже прошли оценку: 1,234 разработчика</p>
+        <div class="flex justify-center gap-2 mt-2">
+          <div class="w-8 h-8 rounded-full bg-gray-200"></div>
+          <div class="w-8 h-8 rounded-full bg-gray-300"></div>
+          <div class="w-8 h-8 rounded-full bg-gray-400"></div>
+          <span class="text-sm leading-8">и другие</span>
+        </div>
+      </div>
+    </div>
+
+  {:else if !$showResults && !$showConfirmation}
+    <!-- Quiz questions section -->
+    <div class="card max-w-2xl mx-auto">
+      <div class="p-6 space-y-6">
+        <div class="mb-6">
+          <!-- Progress bar -->
+          <div class="progress-bar">
+            <div 
+              class="progress-bar-fill"
+              style="width: {($currentStep / questionsValue.length) * 100}%"
+            ></div>
+          </div>
+          <div class="flex justify-between items-center mt-2">
+            <span class="text-sm text-gray-500">
+              Вопрос {$currentStep + 1} из {questionsValue.length}
+            </span>
+            <button 
+              on:click={skipQuestion}
+              class="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Пропустить
+            </button>
+          </div>
+        </div>
+        
+        <h3 class="text-lg font-semibold mb-4">
+          {questionsValue[$currentStep].question}
+        </h3>
+        
+        <div class="space-y-3">
+          {#each questionsValue[$currentStep].options as option}
+            <button
+              on:click={() => handleAnswer(option.value)}
+              class="quiz-option w-full text-left rounded-lg border hover:border-primary"
+            >
+              {option.label}
+            </button>
+          {/each}
+        </div>
+
+        {#if $currentStep > 0}
+          <button
+            on:click={goBack}
+            class="flex items-center gap-2 text-gray-600 hover:text-gray-800 mt-4"
+          >
+            <ArrowLeft class="w-4 h-4" />
+            Назад
+          </button>
+        {/if}
+      </div>
+    </div>
+
+  {:else if $showConfirmation}
+    <!-- Confirmation section -->
+    <div class="card max-w-2xl mx-auto">
+      <div class="p-6 text-center space-y-6">
+        <h3 class="text-xl font-semibold mb-4">Готовы увидеть результаты?</h3>
+        <p class="text-gray-600 mb-6">
+          Вы ответили на все вопросы. Нажмите "Подтвердить", чтобы увидеть свой уровень и получить план развития.
+        </p>
+        <div class="flex justify-center gap-4">
+          <button
+            on:click={goBack}
+            class="btn border border-gray-200 hover:bg-gray-50"
+          >
+            Вернуться к вопросам
+          </button>
+          <button
+            on:click={confirmSubmission}
+            class="btn btn-primary"
+          >
+            Подтвердить
+          </button>
+        </div>
+      </div>
+    </div>
+
+  {:else}
+    <!-- Results section -->
+    {@const level = $quizStore.lastResults?.level || assessLevel()}
+    {@const nextLevel = level === 'below-junior' ? 'junior' : 'middle'}
+    {@const gaps = getGaps(nextLevel)}
+
+    <div class="card max-w-4xl mx-auto">
+      <div class="p-8 space-y-8">
+        <div>
+          <h2>Результаты оценки</h2>
+          <div class="flex items-center gap-2 text-lg">
+            Текущий уровень: 
+            <span class="font-semibold">
+              {#if level === 'middle'}
+                Middle Developer
+              {:else if level === 'junior'}
+                Junior Developer
+              {:else}
+                Beginner
+              {/if}
+            </span>
           </div>
         </div>
 
-      {:else}
-        {@const level = assessLevel()}
-        {@const nextLevel = level === 'below-junior' ? 'junior' : 'middle'}
-        {@const gaps = getGaps(nextLevel)}
-
         <div class="space-y-6">
-          <div class="mb-8">
-            <h3 class="text-xl font-semibold mb-2">Your Assessment Results</h3>
-            <div class="flex items-center gap-2 text-lg">
-              Current level: 
-              <span class="font-semibold">
-                {#if level === 'middle'}
-                  Middle Developer
-                {:else if level === 'junior'}
-                  Junior Developer
-                {:else}
-                  Beginner
-                {/if}
-              </span>
-            </div>
-          </div>
+          <h3>
+            Что нужно для уровня {nextLevel === 'junior' ? 'Junior' : 'Middle'}:
+          </h3>
+          
+          {#each Object.entries(skillGroups) as [groupId, group]}
+            {@const groupGaps = gaps.filter(gap => {
+              const skillId = questionsValue.find(q => q.category === gap.skill)?.id;
+              return group.skills.includes(skillId || '');
+            })}
 
-          <div class="space-y-6">
-            <h4 class="font-semibold">
-              Gaps to reach {nextLevel === 'junior' ? 'Junior' : 'Middle'} level:
-            </h4>
-            
-            {#each Object.entries(skillGroups) as [groupId, group]}
-              {@const groupGaps = gaps.filter(gap => {
-                const skillId = questionsValue.find(q => q.category === gap.skill)?.id;
-                return group.skills.includes(skillId || '');
-              })}
-
-              <div class="card">
-                <div class="p-6">
-                  <div class="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 class="font-semibold text-lg mb-1">{group.title}</h3>
-                      <p class="text-sm text-gray-600">{group.description}</p>
-                    </div>
-                    <a
-                      href={group.assessmentUrl}
-                      class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      Assess Skills
-                      <ArrowRight class="w-4 h-4" />
-                    </a>
+            <div class="card">
+              <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 class="font-semibold text-lg mb-1">{group.title}</h4>
+                    <p class="text-sm text-gray-600">{group.description}</p>
                   </div>
-
-                  {#if groupGaps.length > 0}
-                    <div class="space-y-3">
-                      {#each groupGaps as gap}
-                        <div class="border-l-4 border-yellow-500 pl-4 py-2">
-                          <div class="flex items-center gap-2">
-                            <AlertTriangle class="w-5 h-5 text-yellow-500" />
-                            <span class="font-semibold">{gap.skill}</span>
-                          </div>
-                          <p class="text-sm text-gray-600 mt-1">
-                            Required: {gap.criteria}
-                          </p>
-                        </div>
-                      {/each}
-                    </div>
-                  {:else}
-                    <div class="text-sm text-gray-600">
-                      Take an assessment to evaluate your skills in this area
-                    </div>
-                  {/if}
+                  <a
+                    href={group.assessmentUrl}
+                    class="btn btn-primary text-sm"
+                  >
+                    Оценить навыки
+                    <ArrowRight class="w-4 h-4 ml-2" />
+                  </a>
                 </div>
-              </div>
-            {/each}
-          </div>
 
-          <div class="mt-8 space-y-4">
-            <h4 class="font-semibold">Overall Skill Breakdown:</h4>
+                {#if groupGaps.length > 0}
+                  <div class="space-y-3">
+                    {#each groupGaps as gap}
+                      <div class="border-l-4 border-yellow-500 pl-4 py-2">
+                        <div class="flex items-center gap-2">
+                          <AlertTriangle class="w-5 h-5 text-yellow-500" />
+                          <span class="font-semibold">{gap.skill}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">
+                          Требуется: {gap.criteria}
+                        </p>
+                      </div>
+                    {/each}
+                  </div>
+                {:else}
+                  <div class="text-sm text-gray-600">
+                    Пройдите оценку, чтобы определить уровень навыков в этой области
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+
+        <div class="space-y-4">
+          <h3>Детальный анализ навыков:</h3>
+          <div class="grid gap-3">
             {#each questionsValue as question}
               {@const score = $answers[question.id] || 0}
               {@const targetScore = levelCriteria[nextLevel].minScore[question.id as keyof typeof levelCriteria.junior.minScore]}
               
-              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span>{question.category}</span>
                 <div class="flex items-center gap-2">
                   {#if score >= targetScore}
@@ -376,28 +568,29 @@
                     <XCircle class="w-5 h-5 text-red-500" />
                   {/if}
                   <span>
-                    Level {score} / {targetScore}
+                    Уровень {score} / {targetScore}
                   </span>
                 </div>
               </div>
             {/each}
           </div>
-
-          <div class="bg-blue-50 p-4 rounded-lg mt-6">
-            <h3 class="font-semibold mb-2">Want to improve faster?</h3>
-            <p class="text-sm text-blue-800 mb-4">
-              Get personalized guidance and practice with real interview questions. 
-              Our mentors will help you close these gaps effectively.
-            </p>
-            <button 
-              class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-              on:click={() => goto('/mentoring')}
-            >
-              Schedule Mentoring Session
-            </button>
-          </div>
         </div>
-      {/if}
+
+        <div class="card bg-primary/5 p-6">
+          <h3>Хотите быстрее повысить уровень?</h3>
+          <p class="text-gray-600 mb-4">
+            Получите персональные рекомендации и практикуйтесь с реальными интервью-вопросами.
+            Наши менторы помогут вам эффективно закрыть пробелы в знаниях.
+          </p>
+          <button 
+            class="btn btn-primary"
+            on:click={() => goto('/mentoring')}
+          >
+            Получить детальный план развития
+            <ArrowRight class="w-5 h-5 ml-2" />
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
+  {/if}
 </div>

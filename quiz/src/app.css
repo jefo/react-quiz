@@ -1,5 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html, body { @apply h-full overflow-hidden; }
+@layer base {
+  html, body { 
+    @apply h-full overflow-x-hidden bg-gradient-to-b from-white to-blue-50;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-button 
+           font-medium transition-all duration-default ease-out
+           focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary/90 
+           active:translate-y-[1px] 
+           focus:ring-primary/50;
+  }
+
+  .card {
+    @apply bg-white/80 backdrop-blur-card rounded-card 
+           shadow-sm border border-gray-100
+           transition-transform duration-default ease-out
+           hover:translate-y-[-2px] hover:shadow-md;
+  }
+
+  .input {
+    @apply rounded-lg border-gray-300 
+           focus:border-primary focus:ring-primary/20;
+  }
+}
+
+@layer utilities {
+  .fade-in {
+    animation: fadeIn 300ms ease-out;
+  }
+
+  .slide-in {
+    animation: slideIn 300ms ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* Progress bar animation */
+.progress-bar {
+  @apply h-1 bg-primary/20 rounded-full overflow-hidden;
+}
+
+.progress-bar-fill {
+  @apply h-full bg-primary transition-all duration-300 ease-out;
+}
+
+/* Quiz card hover and selection states */
+.quiz-option {
+  @apply relative p-4 cursor-pointer;
+}
+
+.quiz-option::after {
+  content: '';
+  @apply absolute inset-0 rounded-card opacity-0 
+         transition-opacity duration-200 
+         bg-primary/5;
+}
+
+.quiz-option:hover::after {
+  @apply opacity-100;
+}
+
+.quiz-option.selected {
+  @apply ring-2 ring-primary bg-primary/5;
+}
