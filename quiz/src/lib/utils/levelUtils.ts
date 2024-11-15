@@ -36,7 +36,7 @@ export function calculateProgress(skillScores: Record<string, number> | undefine
   if (scores.length === 0) return 0;
   
   const totalScore = scores.reduce((sum, score) => sum + score, 0);
-  const maxPossibleScore = scores.length * 3; // 3 - максимальный балл
+  const maxPossibleScore = scores.length * 3; // Maximum score is 3 to match the questions scale
   
   return Math.round((totalScore / maxPossibleScore) * 100);
 }

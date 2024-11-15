@@ -41,7 +41,10 @@
   };
 
   function calculateLevel(scores: Record<string, number>) {
-    let level = 'junior';
+    let level = 'below-junior';  // Changed from 'beginner' to 'below-junior' to match levelMap keys
+    
+    const juniorRequirements = Object.entries(levelCriteria.junior.minScore)
+      .every(([key, required]) => (scores[key] || 0) >= required);
     const middleRequirements = Object.entries(levelCriteria.middle.minScore)
       .every(([key, required]) => (scores[key] || 0) >= required);
     const seniorRequirements = Object.entries(levelCriteria.senior.minScore)
@@ -49,6 +52,8 @@
 
     if (seniorRequirements) level = 'senior';
     else if (middleRequirements) level = 'middle';
+    else if (juniorRequirements) level = 'junior';
+    
     return level;
   }
 

@@ -7,6 +7,8 @@
   import { formatLevel, getLevelDescription, getSkillLevel, calculateProgress } from '$lib/utils/levelUtils';
   import { getStrengthsGroups, getDetailedGapsGroups } from '$lib/utils/skillUtils';
   import { goto } from '$app/navigation';
+  import { checklists } from '$lib/data/checklists';
+  import ChecklistModal from '$lib/components/ChecklistModal.svelte';
   import { 
     ArrowLeft, 
     ArrowRight, 
@@ -24,6 +26,8 @@
   const activeTab = writable('react');
   const showQuiz = writable(false);
   const expandedGroups = writable(new Set<string>());
+  const showChecklistModal = writable(false);
+  const currentChecklist = writable(checklists['react-performance']);
 
   // При инициализации раскрываем первую группу в правой колонке
   $: if ($quizStore.lastResults?.technology) {
@@ -51,7 +55,14 @@
     alert('Генерация персонализированного плана развития...');
   }
 
-  function assessLevel(): 'junior' | 'middle' | 'below-junior' {
+  function assessLevel(): 'below-junior' | 'junior' | 'middle' | 'senior' {
+    // Check requirements in descending order (senior -> middle -> junior)
+    const seniorCheck = Object.entries(levelCriteria.senior.minScore).every(
+      ([skill, requiredScore]) => ($answers[skill] || 0) >= requiredScore
+    );
+    
+    if (seniorCheck) return 'senior';
+
     const middleCheck = Object.entries(levelCriteria.middle.minScore).every(
       ([skill, requiredScore]) => ($answers[skill] || 0) >= requiredScore
     );
@@ -83,6 +94,29 @@
     };
     
     quizStore.finishQuiz(results);
+  }
+
+  function getDocLink(recommendation: string): string {
+    const docLinks: Record<string, string> = {
+      // React
+      'Основы компонентов': 'https://react.dev/learn/your-first-component',
+      'Пропсы и композиция': 'https://react.dev/learn/passing-props-to-a-component',
+      'Состояние и хуки': 'https://react.dev/learn/state-a-components-memory',
+      'Жизненный цикл': 'https://react.dev/learn/lifecycle-of-reactive-effects',
+      'Оптимизация': 'https://react.dev/learn/render-and-commit',
+      // TypeScript
+      'Основы TypeScript': 'https://www.typescriptlang.org/docs/handbook/2/basic-types.html',
+      'Интерфейсы и типы': 'https://www.typescriptlang.org/docs/handbook/2/everyday-types.html',
+      'Дженерики': 'https://www.typescriptlang.org/docs/handbook/2/generics.html',
+      'Продвинутые типы': 'https://www.typescriptlang.org/docs/handbook/2/types-from-types.html',
+      // State Management
+      'Управление состоянием': 'https://react.dev/learn/managing-state',
+      'Контекст': 'https://react.dev/learn/passing-data-deeply-with-context',
+      'Redux': 'https://redux.js.org/introduction/getting-started',
+      'Эффекты': 'https://react.dev/learn/synchronizing-with-effects',
+    };
+    
+    return docLinks[recommendation] || '#';
   }
 </script>
 
@@ -150,7 +184,7 @@
                 <span>Middle</span>
                 <span>Senior</span>
               </div>
-              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden relative">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden relative">
                 <!-- Level segments -->
                 <div class="absolute inset-0 flex">
                   <div class="w-1/4 h-full bg-gray-300"></div>
@@ -165,127 +199,115 @@
               </div>
             </div>
           </div>
-          
-          <button
-            on:click={generateSkillPlan}
-            class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center space-x-2"
-          >
-            <span>Получить план прокачки</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
-            </svg>
-          </button>
         </div>
       </div>
 
-      <!-- Skills Overview -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Current Level Skills -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <div class="flex items-center space-x-3 mb-6">
-            <div class="flex items-center justify-center p-2 bg-green-100 rounded-lg w-10 h-10">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-            </div>
-            <h2 class="text-xl font-semibold leading-none">Освоенные навыки</h2>
+      <!-- Recommendations -->
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="flex items-center space-x-3 mb-6">
+          <div class="flex items-center justify-center p-2 bg-blue-100 rounded-lg w-10 h-10">
+            <span class="text-2xl leading-none">📚</span>
           </div>
-          
-          {#each Object.entries(skillGroups) as [key, group]}
-            {#if $activeTab === key && $quizStore.lastResults?.technology === key}
-              {#each getStrengthsGroups(key, $quizStore.lastResults, questions) as strengthGroup}
-                <div class="mb-6 bg-gray-50 rounded-lg p-4">
-                  <div class="flex justify-between items-center">
-                    <div>
-                      <span class="font-medium">{strengthGroup.category}</span>
-                      <div class="text-sm text-gray-500">
-                        Освоено {strengthGroup.skills.filter(skill => skill.confirmed).length} из {strengthGroup.skills.length}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="mt-4 space-y-3 pl-4">
-                    {#each strengthGroup.skills as skill}
-                      <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                          {#if skill.confirmed}
-                            <span class="text-green-500">✓</span>
-                          {:else}
-                            <span class="w-5 h-5"></span>
-                          {/if}
-                          <span>{skill.name}</span>
+          <h2 class="text-xl font-semibold leading-none">Рекомендации по повышению уровня</h2>
+        </div>
+        
+        {#each Object.entries(skillGroups) as [key, group]}
+          {#if $activeTab === key && $quizStore.lastResults?.technology === key}
+            {#each getDetailedGapsGroups(key, $quizStore.lastResults, questions) as gapGroup}
+              <div class="mb-8">
+                <!-- Mandatory Skills -->
+                <div class="mb-6">
+                  <h3 class="text-lg font-semibold mb-3 text-red-600">Обязательное</h3>
+                  <div class="space-y-4">
+                    {#each gapGroup.skills.filter(skill => skill.currentLevel < 2) as skill}
+                      <div class="bg-red-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-3 mb-2">
+                          <span>🎯</span>
+                          <span class="font-medium text-gray-800">{skill.name}</span>
                         </div>
-                        <span class="text-sm text-gray-500">
-                          {getSkillLevel($quizStore.lastResults?.skillScores[skill.id] || 0)}
-                        </span>
+                        <div class="ml-8">
+                          <div class="text-sm text-gray-700 mb-3">
+                            Почему это важно: Этот навык является базовым для вашего уровня и необходим для эффективной работы с {group.title}
+                          </div>
+                          {#if skill.recommendations.length > 0}
+                            <div class="space-y-2">
+                              {#each skill.recommendations as recommendation}
+                                <div class="flex items-start space-x-2">
+                                  <span class="mt-0.5">📖</span>
+                                  <a href={getDocLink(recommendation)} 
+                                     class="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                     target="_blank"
+                                     rel="noopener noreferrer">
+                                    {recommendation}
+                                  </a>
+                                </div>
+                              {/each}
+                              <button
+                                class="mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                                on:click={() => {
+                                  $currentChecklist = checklists['react-performance'];
+                                  $showChecklistModal = true;
+                                }}
+                              >
+                                <span class="text-lg">📋</span>
+                                Посмотреть полный чеклист
+                              </button>
+                            </div>
+                          {/if}
+                        </div>
                       </div>
                     {/each}
                   </div>
                 </div>
-              {/each}
-            {/if}
-          {/each}
-        </div>
 
-        <!-- Next Level Skills -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <div class="flex items-center space-x-3 mb-6">
-            <div class="flex items-center justify-center p-2 bg-blue-100 rounded-lg w-10 h-10">
-              <span class="text-2xl leading-none">📈</span>
-            </div>
-            <h2 class="text-xl font-semibold leading-none">Навыки для повышения уровня</h2>
-          </div>
-          
-          {#each Object.entries(skillGroups) as [key, group]}
-            {#if $activeTab === key && $quizStore.lastResults?.technology === key}
-              {#each getDetailedGapsGroups(key, $quizStore.lastResults, questions) as gapGroup}
-                <div class="mb-6 bg-gray-50 rounded-lg p-4">
-                  <div class="flex justify-between items-center cursor-pointer"
-                       on:click={() => toggleGroup(gapGroup.category)}>
-                    <div>
-                      <span class="font-medium">{gapGroup.category}</span>
-                      <div class="text-sm text-gray-500">
-                        Требуется освоить {gapGroup.total - gapGroup.completed} из {gapGroup.total}
-                      </div>
-                    </div>
-                    <span class="text-gray-400">{isGroupExpanded(gapGroup.category) ? '▼' : '▶'}</span>
-                  </div>
-                  
-                  {#if isGroupExpanded(gapGroup.category)}
-                    <div class="mt-4 space-y-4 pl-4 border-l-2 border-blue-200">
-                      {#each gapGroup.skills as skill}
-                        <div class="mb-6">
-                          <div class="flex items-center space-x-3">
-                            <span>🎯</span>
-                            <span class="font-medium text-gray-700">{skill.name}</span>
-                          </div>
-                          <div class="mt-2 ml-8">
-                            <div class="text-sm text-gray-600 mb-2">
-                              Текущий уровень: {getSkillLevel(skill.currentLevel)}
-                            </div>
-                            <div class="space-y-2">
-                              {#if skill.recommendations.length > 0}
-                                <div class="text-sm font-medium text-gray-700 mb-1">
-                                  Для повышения уровня:
-                                </div>
-                                {#each skill.recommendations as recommendation}
-                                  <div class="flex items-start space-x-2">
-                                    <span class="mt-0.5">☑️</span>
-                                    <span class="text-sm text-gray-600">{recommendation}</span>
-                                  </div>
-                                {/each}
-                              {/if}
-                            </div>
-                          </div>
+                <!-- Recommended Skills -->
+                <div>
+                  <h3 class="text-lg font-semibold mb-3 text-blue-600">Рекомендуемое</h3>
+                  <div class="space-y-4">
+                    {#each gapGroup.skills.filter(skill => skill.currentLevel >= 2) as skill}
+                      <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-3 mb-2">
+                          <span>🚀</span>
+                          <span class="font-medium text-gray-800">{skill.name}</span>
                         </div>
-                      {/each}
-                    </div>
-                  {/if}
+                        <div class="ml-8">
+                          <div class="text-sm text-gray-700 mb-3">
+                            Почему это важно: Освоение этих концепций поможет вам достичь следующего уровня и писать более эффективный код
+                          </div>
+                          {#if skill.recommendations.length > 0}
+                            <div class="space-y-2">
+                              {#each skill.recommendations as recommendation}
+                                <div class="flex items-start space-x-2">
+                                  <span class="mt-0.5">📖</span>
+                                  <a href={getDocLink(recommendation)} 
+                                     class="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                     target="_blank"
+                                     rel="noopener noreferrer">
+                                    {recommendation}
+                                  </a>
+                                </div>
+                              {/each}
+                              <button
+                                class="mt-2 text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                                on:click={() => {
+                                  $currentChecklist = checklists['react-performance'];
+                                  $showChecklistModal = true;
+                                }}
+                              >
+                                <span class="text-lg">📋</span>
+                                Посмотреть полный чеклист
+                              </button>
+                            </div>
+                          {/if}
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
                 </div>
-              {/each}
-            {/if}
-          {/each}
-        </div>
+              </div>
+            {/each}
+          {/if}
+        {/each}
       </div>
     </div>
   {:else if $showConfirmation}
@@ -434,3 +456,9 @@
     </div>
   {/if}
 </div>
+
+<ChecklistModal 
+  checklist={$currentChecklist}
+  isOpen={$showChecklistModal}
+  on:close={() => $showChecklistModal = false}
+/>

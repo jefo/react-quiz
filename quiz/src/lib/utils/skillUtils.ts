@@ -88,7 +88,9 @@ export function getDetailedGapsGroups(technology: string, results: QuizResults |
 
     categoryQuestions.forEach(question => {
       const score = results.skillScores[question.id] || 0;
-      if (score < 2) { // Если навык не освоен (оценка меньше 2)
+      // Show recommendations for skills that need improvement to reach the next level
+      const nextLevelScore = score < 2 ? 2 : 4; // If current score < 2, aim for 2, otherwise aim for 4 (senior level)
+      if (score < nextLevelScore) {
         const recs = recommendations[question.id]?.[score] || [];
         skills.push({
           name: question.question,
