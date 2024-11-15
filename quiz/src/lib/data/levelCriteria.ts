@@ -4,6 +4,16 @@ export interface LevelCriteria {
 }
 
 export const levelCriteria: Record<string, LevelCriteria> = {
+  beginner: {
+    required: ['components'],
+    minScore: {
+      components: 1,
+      hooks: 0,
+      state: 0,
+      lifecycle: 0,
+      performance: 0
+    }
+  },
   junior: {
     required: ['components', 'hooks', 'state'],
     minScore: {
@@ -22,6 +32,16 @@ export const levelCriteria: Record<string, LevelCriteria> = {
       state: 3,
       lifecycle: 2,
       performance: 2
+    }
+  },
+  senior: {
+    required: ['components', 'hooks', 'state', 'lifecycle', 'performance'],
+    minScore: {
+      components: 4,
+      hooks: 4,
+      state: 4,
+      lifecycle: 3,
+      performance: 3
     }
   }
 };

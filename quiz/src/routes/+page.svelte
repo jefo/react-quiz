@@ -145,11 +145,21 @@
             <!-- Progress Bar -->
             <div class="w-full max-w-md">
               <div class="flex justify-between text-sm text-gray-600 mb-1">
-                <span>Текущий уровень</span>
-                <span>Следующий уровень</span>
+                <span>Beginner</span>
+                <span>Junior</span>
+                <span>Middle</span>
+                <span>Senior</span>
               </div>
-              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div class="h-full bg-blue-500 rounded-full" 
+              <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden relative">
+                <!-- Level segments -->
+                <div class="absolute inset-0 flex">
+                  <div class="w-1/4 h-full bg-gray-300"></div>
+                  <div class="w-1/4 h-full bg-gray-400"></div>
+                  <div class="w-1/4 h-full bg-gray-500"></div>
+                  <div class="w-1/4 h-full bg-gray-600"></div>
+                </div>
+                <!-- Progress fill -->
+                <div class="relative h-full bg-blue-500 rounded-full" 
                      style="width: {calculateProgress($quizStore.lastResults?.skillScores)}%">
                 </div>
               </div>
