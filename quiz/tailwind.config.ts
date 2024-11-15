@@ -15,22 +15,31 @@ export default {
 	theme: {
 		extend: {
 			colors: {
-				primary: '#2563EB',    // основной синий
+				primary: {
+					DEFAULT: '#2563EB',
+					50: '#EFF6FF',
+					100: '#DBEAFE',
+					200: '#BFDBFE',
+					300: '#93C5FD',
+					400: '#60A5FA',
+					500: '#3B82F6',
+					600: '#2563EB',
+					700: '#1D4ED8',
+					800: '#1E40AF',
+					900: '#1E3A8A',
+					950: '#172554'
+				},
 				accent: '#4F46E5',     // акцентный индиго
 				text: {
 					DEFAULT: '#1F2937', // основной текст
 				}
 			},
+			animation: {
+				'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+			},
 			fontFamily: {
 				sans: ['Inter', 'SF Pro Text', 'system-ui', 'sans-serif'],
 				display: ['Inter', 'SF Pro Display', 'system-ui', 'sans-serif'],
-			},
-			fontSize: {
-				'h1': ['32px', { lineHeight: '1.2', fontWeight: '700' }],
-				'h2': ['24px', { lineHeight: '1.3', fontWeight: '600' }],
-				'h3': ['20px', { lineHeight: '1.4', fontWeight: '600' }],
-				'base': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
-				'sm': ['14px', { lineHeight: '1.5', fontWeight: '400' }],
 			},
 			borderRadius: {
 				'button': '8px',

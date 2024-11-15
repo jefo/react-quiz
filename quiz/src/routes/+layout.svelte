@@ -11,17 +11,19 @@
 	</main>
 </div>
 
-<style>
-	:global(h1) {
-		@apply text-h1 font-display mb-6;
-	}
-	:global(h2) {
-		@apply text-h2 font-display mb-4;
-	}
-	:global(h3) {
-		@apply text-h3 font-display mb-3;
-	}
-	:global(p) {
-		@apply text-base text-text mb-4;
+<style lang="postcss">
+	:global {
+		h1 {
+			@apply text-4xl font-bold font-sans mb-6;
+		}
+		h2 {
+			@apply text-2xl font-semibold font-sans mb-4;
+		}
+		h3 {
+			@apply text-xl font-semibold font-sans mb-3;
+		}
+		p {
+			@apply text-base text-gray-800 mb-4;
+		}
 	}
 </style>

@@ -70,18 +70,46 @@
   };
 </script>
 
-<div class="max-w-4xl mx-auto p-8">
+<style lang="postcss">
+  .progress-bar {
+    @apply w-full h-2.5 bg-primary-100 rounded-full overflow-hidden;
+  }
+  
+  .progress-bar-fill {
+    @apply h-full bg-primary transition-all duration-300 ease-out;
+    animation: pulse 2s infinite;
+  }
+
+  .quiz-option {
+    @apply p-4 transition-all duration-200 bg-white border border-gray-200;
+    @apply hover:bg-primary-50 hover:border-primary-200 hover:shadow-sm;
+    @apply active:scale-[0.99] active:bg-primary-100;
+  }
+
+  .quiz-option.selected {
+    @apply border-primary-400 bg-primary-50 shadow-sm;
+    @apply hover:bg-primary-100;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { opacity: 0.8; }
+  }
+</style>
+
+<div class="max-w-4xl mx-auto p-4 md:p-8">
   <div class="mb-8">
     <button 
       on:click={() => goto('/')} 
-      class="inline-flex items-center text-gray-600 hover:text-gray-800"
+      class="inline-flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200"
     >
       <ArrowLeft class="w-5 h-5 mr-2" />
       {$quizStore.lastResults ? 'Вернуться к результатам' : 'На главную'}
     </button>
   </div>
 
-  <div class="card p-8">
+  <div class="card bg-white shadow-sm rounded-lg p-6 md:p-8">
     {#if !$quizStore.inProgress}
       <h1>{mode === 'self-assessment' ? 'TypeScript Self Assessment' : 'TypeScript Knowledge Test'}</h1>
       <p class="text-xl text-gray-600 mb-8">
@@ -93,7 +121,7 @@
           <h2 class="text-lg font-semibold mb-4">Области оценки:</h2>
           <ul class="space-y-4">
             <li class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+              <div class="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center shrink-0 mt-1">
                 <span class="text-primary">1</span>
               </div>
               <div>
@@ -102,7 +130,7 @@
               </div>
             </li>
             <li class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+              <div class="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center shrink-0 mt-1">
                 <span class="text-primary">2</span>
               </div>
               <div>
@@ -111,7 +139,7 @@
               </div>
             </li>
             <li class="flex items-start gap-3">
-              <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+              <div class="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center shrink-0 mt-1">
                 <span class="text-primary">3</span>
               </div>
               <div>
@@ -122,7 +150,7 @@
           </ul>
         </div>
 
-        <div class="card bg-primary/5 p-6">
+        <div class="card bg-primary-50 p-6">
           <h3 class="font-semibold mb-2">Начать оценку</h3>
           <p class="text-gray-600 mb-4">
             {mode === 'self-assessment' ? 'Ответьте на вопросы, чтобы получить детальную оценку ваших навыков TypeScript' : 'Ответьте на вопросы, чтобы пройти тестирование'}
@@ -136,51 +164,66 @@
         </div>
       </div>
     {:else}
-      <div class="mb-6">
-        <!-- Progress bar -->
-        <div class="progress-bar">
-          <div 
-            class="progress-bar-fill"
-            style="width: {($quizStore.currentStep / questions.length) * 100}%"
-          ></div>
+      <div class="mb-8">
+        <!-- Progress bar with percentage -->
+        <div class="flex items-center gap-4 mb-3">
+          <div class="progress-bar flex-1">
+            <div 
+              class="progress-bar-fill"
+              style="width: {($quizStore.currentStep / questions.length) * 100}%"
+            ></div>
+          </div>
+          <span class="text-sm font-medium text-gray-700">
+            {Math.round(($quizStore.currentStep / questions.length) * 100)}%
+          </span>
         </div>
-        <div class="flex justify-between items-center mt-2">
-          <span class="text-sm text-gray-500">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">
             Вопрос {$quizStore.currentStep + 1} из {questions.length}
           </span>
           <button 
             on:click={skipQuestion}
-            class="text-sm text-gray-500 hover:text-gray-700"
+            class="text-sm text-gray-600 hover:text-primary transition-colors duration-200 flex items-center gap-1"
           >
             Пропустить
+            <ArrowLeft class="w-4 h-4 rotate-180" />
           </button>
         </div>
       </div>
       
-      <h3 class="text-lg font-semibold mb-4">
-        {currentQuestion.question}
-      </h3>
-      
-      <div class="space-y-3">
-        {#each currentQuestion.options as option}
-          <button
-            on:click={() => handleAnswer(option.value)}
-            class="quiz-option w-full text-left rounded-lg border hover:border-primary {selectedAnswer === option.value ? 'selected' : ''}"
-          >
-            {option.label}
-          </button>
-        {/each}
-      </div>
+      <div class="space-y-6">
+        <h3 class="text-xl font-semibold text-gray-800">
+          {currentQuestion.question}
+        </h3>
+        
+        <div class="space-y-3">
+          {#each currentQuestion.options as option}
+            <button
+              on:click={() => handleAnswer(option.value)}
+              class="quiz-option w-full text-left rounded-lg flex items-center gap-3 group"
+              class:selected={selectedAnswer === option.value}
+            >
+              <div class="w-6 h-6 rounded-full border-2 border-gray-300 group-hover:border-primary flex items-center justify-center shrink-0
+                {selectedAnswer === option.value ? 'border-primary bg-primary-50' : ''}">
+                {#if selectedAnswer === option.value}
+                  <CheckCircle2 class="w-4 h-4 text-primary" />
+                {/if}
+              </div>
+              <span class="flex-1 text-gray-800">{option.label}</span>
+            </button>
+          {/each}
+        </div>
 
-      {#if $quizStore.currentStep > 0}
-        <button
-          on:click={goBack}
-          class="flex items-center gap-2 text-gray-600 hover:text-gray-800 mt-4"
-        >
-          <ArrowLeft class="w-4 h-4" />
-          Назад
-        </button>
-      {/if}
+        {#if $quizStore.currentStep > 0}
+          <button
+            on:click={goBack}
+            class="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors duration-200 mt-8"
+          >
+            <ArrowLeft class="w-4 h-4" />
+            Назад
+          </button>
+        {/if}
+      </div>
     {/if}
   </div>
 </div>

@@ -13,8 +13,8 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center px-6 py-3 rounded-button 
-           font-medium transition-all duration-default ease-out
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-lg 
+           font-medium transition-all duration-200 ease-out
            focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 
@@ -25,9 +25,9 @@
   }
 
   .card {
-    @apply bg-white/80 backdrop-blur-card rounded-card 
+    @apply bg-white/80 backdrop-blur-sm rounded-xl 
            shadow-sm border border-gray-100
-           transition-transform duration-default ease-out
+           transition-transform duration-200 ease-out
            hover:translate-y-[-2px] hover:shadow-md;
   }
 
@@ -105,7 +105,7 @@
 
 .quiz-option::after {
   content: '';
-  @apply absolute inset-0 rounded-card opacity-0 
+  @apply absolute inset-0 rounded-xl opacity-0 
          transition-opacity duration-200 
          bg-primary/5;
 }

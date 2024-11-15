@@ -121,5 +121,93 @@ export const questions: Question[] = [
         criteria: "Advanced optimization"
       }
     ]
+  },
+  {
+    id: 'routing',
+    category: 'Routing & Navigation',
+    question: 'How do you handle routing in React applications?',
+    options: [
+      {
+        label: "I can implement basic routes and navigation",
+        value: 1,
+        criteria: "Basic routing"
+      },
+      {
+        label: "I work with nested routes and route parameters",
+        value: 2,
+        criteria: "Advanced routing"
+      },
+      {
+        label: "I implement complex routing patterns and optimizations",
+        value: 3,
+        criteria: "Expert routing"
+      }
+    ]
+  },
+  {
+    id: 'data-fetching',
+    category: 'Data Fetching',
+    question: 'How do you handle data fetching and API integration?',
+    options: [
+      {
+        label: "I can make basic API calls and handle responses",
+        value: 1,
+        criteria: "Basic data fetching"
+      },
+      {
+        label: "I implement data caching and error handling",
+        value: 2,
+        criteria: "Intermediate data management"
+      },
+      {
+        label: "I build robust data fetching architectures",
+        value: 3,
+        criteria: "Advanced data patterns"
+      }
+    ]
+  },
+  {
+    id: 'performance',
+    category: 'Performance',
+    question: 'How do you optimize React application performance?',
+    options: [
+      {
+        label: "I understand basic React performance concepts",
+        value: 1,
+        criteria: "Basic optimization"
+      },
+      {
+        label: "I implement common optimization techniques",
+        value: 2,
+        criteria: "Performance tools usage"
+      },
+      {
+        label: "I conduct advanced performance optimization",
+        value: 3,
+        criteria: "Expert optimization"
+      }
+    ]
+  },
+  {
+    id: 'testing',
+    category: 'Testing',
+    question: 'How do you approach testing React applications?',
+    options: [
+      {
+        label: "I can write basic component tests",
+        value: 1,
+        criteria: "Basic testing"
+      },
+      {
+        label: "I implement integration tests and testing patterns",
+        value: 2,
+        criteria: "Advanced testing"
+      },
+      {
+        label: "I create comprehensive test strategies",
+        value: 3,
+        criteria: "Testing architecture"
+      }
+    ]
   }
 ];
