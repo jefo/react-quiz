@@ -16,6 +16,7 @@
     Award, 
     Brain 
   } from 'lucide-svelte';
+  import { getSkillRecommendations } from '$lib/utils/recommendations';
 
   // Stores
   const showWelcome = writable(!$quizStore.inProgress);
@@ -154,158 +155,6 @@
       checklistId: `${results.technology}-${skill.id}`
     }));
   }
-
-  function getSkillRecommendations(currentLevel: string) {
-    const recommendations = {
-      'below-junior': [
-        {
-          icon: '🎯',
-          title: 'Core React',
-          skills: [
-            'JSX и Virtual DOM',
-            'Компоненты и пропсы',
-            'Состояние и жизненный цикл',
-            'Базовые хуки',
-            'Обработка событий'
-          ]
-        },
-        {
-          icon: '🔄',
-          title: 'State Management',
-          skills: [
-            'useState',
-            'useReducer',
-            'Подъем состояния',
-            'Локальное состояние',
-            'Context (базовое использование)'
-          ]
-        },
-        {
-          icon: '🛣️',
-          title: 'Routing & Navigation',
-          skills: [
-            'React Router (базовый)',
-            'Параметры URL',
-            'Навигация',
-            'Защищенные маршруты',
-            'History API'
-          ]
-        }
-      ],
-      'junior': [
-        {
-          icon: '🎯',
-          title: 'Core React',
-          skills: [
-            'Продвинутые хуки',
-            'Context API',
-            'Refs и DOM',
-            'Higher-Order Components',
-            'Render Props'
-          ]
-        },
-        {
-          icon: '🔄',
-          title: 'State Management',
-          skills: [
-            'Redux (основы)',
-            'MobX/Zustand',
-            'Глобальное состояние',
-            'Кеширование',
-            'Сложные структуры данных'
-          ]
-        },
-        {
-          icon: '🌐',
-          title: 'Data Fetching',
-          skills: [
-            'React Query/SWR',
-            'GraphQL (базовый)',
-            'Кеширование запросов',
-            'Оптимистичные обновления',
-            'Отмена запросов'
-          ]
-        }
-      ],
-      'middle': [
-        {
-          icon: '🎯',
-          title: 'Core React',
-          skills: [
-            'Собственные хуки',
-            'Архитектура компонентов',
-            'Интеграция с DOM',
-            'Error Boundaries',
-            'Порталы'
-          ]
-        },
-        {
-          icon: '🔄',
-          title: 'State Management',
-          skills: [
-            'Продвинутый Redux',
-            'Архитектура состояния',
-            'Производительность',
-            'Масштабирование',
-            'State Machines'
-          ]
-        },
-        {
-          icon: '🔒',
-          title: 'Security',
-          skills: [
-            'Продвинутая аутентификация',
-            'Авторизация',
-            'Security Headers',
-            'Аудит безопасности',
-            'Шифрование данных'
-          ]
-        }
-      ],
-      'senior': [
-        {
-          icon: '🎯',
-          title: 'Core React',
-          skills: [
-            'Создание паттернов',
-            'Архитектурные решения',
-            'Оптимизация Core React',
-            'Исследование новых подходов'
-          ]
-        },
-        {
-          icon: '🔄',
-          title: 'State Management',
-          skills: [
-            'Стратегии управления состоянием',
-            'Создание решений',
-            'Оптимизация на уровне приложения',
-            'Инновационные подходы'
-          ]
-        },
-        {
-          icon: '🛠️',
-          title: 'Development & Tooling',
-          skills: [
-            'Продвинутая конфигурация',
-            'Оптимизация сборки',
-            'CI/CD',
-            'Мониторинг',
-            'Инфраструктура'
-          ]
-        }
-      ]
-    };
-
-    const levelMap = {
-      'below-junior': 'below-junior',
-      'junior': 'middle',
-      'middle': 'senior',
-      'senior': 'senior'
-    };
-
-    return recommendations[levelMap[currentLevel as keyof typeof levelMap] || 'below-junior'];
-  }
 </script>
 
 <div class="fade-in min-h-screen bg-gray-50">
@@ -432,6 +281,21 @@
             <div class="mt-4">
               <h4 class="font-medium mb-2">Следующий уровень</h4>
               <p class="text-gray-600">{getNextLevelRequirements($quizStore.lastResults?.level || 'beginner')}</p>
+              
+              <h4 class="font-medium mb-2">Рекомендуемые навыки</h4>
+              {#each getSkillRecommendations($quizStore.lastResults?.level || 'beginner' as 'below-junior' | 'junior' | 'middle' | 'senior') as category}
+                <div class="mb-4">
+                  <h5 class="font-medium flex items-center gap-2">
+                    <span>{category.icon}</span>
+                    {category.title}
+                  </h5>
+                  <ul class="list-disc list-inside ml-4 text-gray-600">
+                    {#each category.skills as skill}
+                      <li>{skill}</li>
+                    {/each}
+                  </ul>
+                </div>
+              {/each}
             </div>
           </div>
         {/if}
@@ -601,7 +465,7 @@
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center space-x-3">
             <div class="flex items-center justify-center p-2 bg-blue-100 rounded-lg w-10 h-10">
-              <span class="text-2xl leading-none">📚</span>
+              <span class="text-2xl">📚</span>
             </div>
             <h2 class="text-xl font-semibold">Следующие шаги</h2>
           </div>
